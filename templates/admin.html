@@ -1,54 +1,60 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Admin</title>
-  <style>body{font-family:system-ui,Segoe UI,Roboto,Arial;padding:24px}table{border-collapse:collapse}td,th{padding:8px;border:1px solid #ddd}</style>
+  <meta charset="UTF-8">
+  <title>MyDB - Admin Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #f8fafc; color: #222; }
+    header { background: #1a73e8; padding: 20px; color: #fff; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { margin: 0; font-size: 22px; }
+    nav a { color: #fff; margin-left: 15px; text-decoration: none; font-weight: bold; }
+    nav a:hover { text-decoration: underline; }
+    main { padding: 20px; max-width: 1000px; margin: auto; }
+    h2 { color: #1a73e8; margin-top: 30px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+    th { background: #f0f0f0; }
+    .card { background: #fff; padding: 20px; margin-top: 20px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+  </style>
 </head>
 <body>
-  <h2>Admin panel</h2>
-  <div><a href="{{ url_for('dashboard') }}">Back</a></div>
 
-  <h3>Users</h3>
-  <table>
-    <tr><th>id</th><th>username</th><th>is_admin</th></tr>
-    {% for u in users %}
-      <tr><td>{{ u.id }}</td><td>{{ u.username }}</td><td>{{ u.is_admin }}</td></tr>
-    {% endfor %}
-  </table>
+<header>
+  <h1>Admin Dashboard</h1>
+  <nav>
+    <a href="index.html">Docs</a>
+    <a href="logout.html">Logout</a>
+  </nav>
+</header>
 
-  <h3>Collections</h3>
-  <ul>
-    {% for c in collections %}
-      <li>{{ c }}</li>
-    {% endfor %}
-  </ul>
+<main>
+  <div class="card">
+    <h2>Users</h2>
+    <table>
+      <tr><th>ID</th><th>Username</th><th>Email</th></tr>
+      <tr><td>1</td><td>suleiman</td><td>suleiman@example.com</td></tr>
+      <tr><td>2</td><td>admin</td><td>admin@example.com</td></tr>
+    </table>
+  </div>
 
-  <h3>Create user</h3>
-  <form id="createUser">
-    <input id="un" placeholder="username">
-    <input id="pw" placeholder="password" type="password">
-    <label><input id="adm" type="checkbox"> is admin</label>
-    <button>Create</button>
-  </form>
+  <div class="card">
+    <h2>Collections</h2>
+    <table>
+      <tr><th>Name</th><th>Docs</th><th>Actions</th></tr>
+      <tr><td>users</td><td>12</td><td><a href="collection.html?name=users">View</a></td></tr>
+      <tr><td>chat_history</td><td>45</td><td><a href="collection.html?name=chat_history">View</a></td></tr>
+    </table>
+  </div>
 
-  <div id="created"></div>
+  <div class="card">
+    <h2>Server Logs</h2>
+    <pre style="background:#272822; color:#f8f8f2; padding:10px; border-radius:6px;">
+[2025-09-10 12:30:00] User 12345 saved chat message.
+[2025-09-10 12:32:15] User admin deleted 2 records from users.
+    </pre>
+  </div>
+</main>
 
-  <script>
-  document.getElementById("createUser").addEventListener("submit", async (e)=>{
-    e.preventDefault();
-    const u=document.getElementById("un").value.trim();
-    const p=document.getElementById("pw").value.trim();
-    const is_admin=document.getElementById("adm").checked;
-    if(!u||!p) return alert("missing");
-    const res=await fetch("/api/admin/users",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:u,password:p,is_admin:is_admin})});
-    const j=await res.json();
-    if(res.ok){
-      document.getElementById("created").innerText = "Created. API key: " + j.api_key;
-    } else {
-      alert(j.error || "error");
-    }
-  });
-  </script>
 </body>
 </html>
