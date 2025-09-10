@@ -1,0 +1,18 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Login</title>
+  <style>body{font-family:system-ui,Segoe UI,Roboto,Arial;padding:24px}</style>
+</head>
+<body>
+  <h2>Login</h2>
+  {% if error %}<div style="color:#b00020">Invalid credentials</div>{% endif %}
+  <form method="post">
+    <div><input name="username" placeholder="username" required></div>
+    <div><input name="password" placeholder="password" type="password" required></div>
+    <div><button type="submit">Login</button></div>
+  </form>
+  <p><a href="{{ url_for('register') }}">Create account</a></p>
+</body>
+</html>
