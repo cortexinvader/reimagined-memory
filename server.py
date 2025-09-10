@@ -6,8 +6,8 @@ from functools import wraps
 DB_PATH = os.environ.get("DB_PATH", "mydata.sqlite")
 SECRET_KEY = os.environ.get("SECRET_KEY", secrets.token_hex(16))
 API_KEY_HEADER = "X-API-Key"
-DEFAULT_ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "Alpha")
-DEFAULT_ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "Cortex($₦)")  # Change in production!
+DEFAULT_ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
+DEFAULT_ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin-pass")  # Change in production!
 
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
@@ -27,25 +27,43 @@ def close_db(exc):
         db.close()
 
 def init_db():
-    if not os.path.exists(DB_PATH):
-        db = sqlite3.connect(DB_PATH)
-        db.executescript(open("schema.sql").read())
-        # Create default admin user
-        raw_api = secrets.token_urlsafe(32)
-        akh = hash_api_key(raw_api)
-        db.execute(
-            "INSERT INTO users (username, password_hash, api_key_hash, is_admin, created_at) VALUES (?, ?, ?, ?, ?)",
-            (
-                DEFAULT_ADMIN_USERNAME,
-                generate_password_hash(DEFAULT_ADMIN_PASSWORD),
-                akh,
-                1,
-                datetime.datetime.utcnow().isoformat()
+    # Check if database file exists
+    db_exists = os.path.exists(DB_PATH)
+    db = sqlite3.connect(DB_PATH)
+    # Check if 'users' table exists
+    cursor = db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
+    users_table_exists = cursor.fetchone() is not None
+    
+    if not db_exists or not users_table_exists:
+        try:
+            # Ensure schema.sql exists
+            if not os.path.exists("schema.sql"):
+                raise FileNotFoundError("schema.sql not found in /app directory")
+            # Apply schema
+            with open("schema.sql") as f:
+                db.executescript(f.read())
+            # Create default admin user
+            raw_api = secrets.token_urlsafe(32)
+            akh = hash_api_key(raw_api)
+            db.execute(
+                "INSERT INTO users (username, password_hash, api_key_hash, is_admin, created_at) VALUES (?, ?, ?, ?, ?)",
+                (
+                    DEFAULT_ADMIN_USERNAME,
+                    generate_password_hash(DEFAULT_ADMIN_PASSWORD),
+                    akh,
+                    1,
+                    datetime.datetime.utcnow().isoformat()
+                )
             )
-        )
-        db.commit()
-        db.close()
-        print(f"Admin user created: username={DEFAULT_ADMIN_USERNAME}, password={DEFAULT_ADMIN_PASSWORD}, api_key={raw_api}")
+            db.commit()
+            print(f"Admin user created: username={DEFAULT_ADMIN_USERNAME}, password={DEFAULT_ADMIN_PASSWORD}, api_key={raw_api}")
+        except FileNotFoundError as e:
+            print(f"Error: {e}")
+            raise
+        except sqlite3.Error as e:
+            print(f"Database error during initialization: {e}")
+            raise
+    db.close()
 
 def login_required(f):
     @wraps(f)
@@ -87,10 +105,6 @@ def index():
     if "user_id" in session:
         return redirect(url_for("dashboard"))
     return redirect(url_for("login"))
-
-@app.route("/docs")
-def docs():
-    return render_template("index.html")
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -299,4 +313,4 @@ def api_users():
 
 if __name__ == "__main__":
     init_db()
-    app.run(host="0.0.0.0", port=5000) 
+    app.run(host="0.0.0.0", port=5000)
