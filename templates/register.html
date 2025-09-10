@@ -1,26 +1,33 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Register</title>
-  <style>body{font-family:system-ui,Segoe UI,Roboto,Arial;padding:24px}</style>
+  <meta charset="UTF-8">
+  <title>MyDB - Register</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; background: #f8fafc; display: flex; justify-content: center; align-items: center; height: 100vh; }
+    .card { background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); width: 300px; }
+    h2 { margin-top: 0; color: #1a73e8; text-align: center; }
+    input { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 4px; }
+    button { width: 100%; padding: 10px; background: #1a73e8; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #155fc0; }
+    .nav { text-align: center; margin-top: 10px; }
+    .nav a { color: #1a73e8; text-decoration: none; }
+  </style>
 </head>
 <body>
-  <h2>Create account</h2>
-  {% if error %}<div style="color:#b00020">Error: {{ error }}</div>{% endif %}
-  {% if created %}
-    <div style="background:#e8f5e9;padding:12px;border-radius:6px">
-      <strong>Account created</strong>
-      <div>Username: {{ username }}</div>
-      <div>API Key (store now): <code>{{ api_key }}</code></div>
-    </div>
-    <p><a href="{{ url_for('login') }}">Login</a></p>
-  {% else %}
-    <form method="post">
-      <div><input name="username" placeholder="username" required></div>
-      <div><input name="password" placeholder="password" type="password" required></div>
-      <div><button type="submit">Register</button></div>
+  <div class="card">
+    <h2>Register</h2>
+    <form action="/register" method="POST">
+      <input type="text" name="username" placeholder="Username" required>
+      <input type="email" name="email" placeholder="Email" required>
+      <input type="password" name="password" placeholder="Password" required>
+      <button type="submit">Register</button>
     </form>
-  {% endif %}
+    <div class="nav">
+      <p>Already have an account? <a href="login.html">Login</a></p>
+      <p><a href="/">← Back to Docs</a></p>
+    </div>
+  </div>
 </body>
 </html>
