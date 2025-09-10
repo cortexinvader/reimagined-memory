@@ -7,7 +7,7 @@ DB_PATH = os.environ.get("DB_PATH", "mydata.sqlite")
 SECRET_KEY = os.environ.get("SECRET_KEY", secrets.token_hex(16))
 API_KEY_HEADER = "X-API-Key"
 DEFAULT_ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
-DEFAULT_ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin-pass")  # Change in production!
+DEFAULT_ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "securepassword123")  # Change in production!
 
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
@@ -64,6 +64,10 @@ def init_db():
             print(f"Database error during initialization: {e}")
             raise
     db.close()
+
+# Ensure database is initialized when the app starts
+with app.app_context():
+    init_db()
 
 def login_required(f):
     @wraps(f)
@@ -136,13 +140,17 @@ def login():
     if request.method == "POST":
         u = request.form.get("username", "").strip()
         p = request.form.get("password", "").strip()
-        row = db.execute("SELECT * FROM users WHERE username = ?", (u,)).fetchone()
-        if row and check_password_hash(row["password_hash"], p):
-            session["user_id"] = row["id"]
-            session["username"] = row["username"]
-            session["is_admin"] = bool(row["is_admin"])
-            return redirect(url_for("dashboard"))
-        return render_template("login.html", error="invalid")
+        try:
+            row = db.execute("SELECT * FROM users WHERE username = ?", (u,)).fetchone()
+            if row and check_password_hash(row["password_hash"], p):
+                session["user_id"] = row["id"]
+                session["username"] = row["username"]
+                session["is_admin"] = bool(row["is_admin"])
+                return redirect(url_for("dashboard"))
+            return render_template("login.html", error="invalid")
+        except sqlite3.OperationalError as e:
+            print(f"Database error in login: {e}")
+            return render_template("login.html", error="database_error")
     return render_template("login.html")
 
 @app.route("/logout")
