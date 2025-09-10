@@ -24,7 +24,7 @@
 <body>
 
 <header>
-  <h1>MyDB API Docs</h1>
+  <h1>MyDB API Documentation</h1>
   <nav>
     <a href="/login">Login</a>
     <a href="/register">Register</a>
@@ -33,27 +33,30 @@
 
 <main>
   <h2>Welcome to MyDB</h2>
-  <p><strong>MyDB</strong> is a lightweight Mongo-like database API built on SQLite.  
-  You can create <em>any number of collections</em> (users, chat_history, orders, logs, etc.) and store different <em>data types</em> using a simple JSON API.</p>
+  <p>MyDB is a lightweight, MongoDB-like database API built on SQLite. It allows users to create and manage <em>collections</em> (e.g., users, chat_history, orders) and store JSON documents with flexible data types. Use the API to save, read, and delete documents in collections via HTTP requests.</p>
 
   <h2>Authentication</h2>
-  <p>All requests must include your API key:</p>
+  <p>All API requests require an API key, obtained during registration. Include it in the <code>X-API-Key</code> header or as a query parameter (<code>?api_key=your_api_key_here</code>).</p>
   <pre><code>X-API-Key: your_api_key_here</code></pre>
 
-  <h2>Actions</h2>
+  <h2>Database Operations</h2>
+  <p>The primary endpoint for database operations is <code>POST /api/operate</code>. It supports three actions: <code>save</code>, <code>read</code>, and <code>delete</code>. Each request specifies a <em>collection</em> (a named group of documents) and a <em>data type</em> for schema validation.</p>
+
+  <h3>Actions</h3>
   <table>
     <tr><th>Action</th><th>Description</th></tr>
-    <tr><td><code>save</code></td><td>Insert a new document into a collection.</td></tr>
-    <tr><td><code>read</code></td><td>Fetch documents matching a filter.</td></tr>
-    <tr><td><code>delete</code></td><td>Remove documents matching a filter.</td></tr>
+    <tr><td><code>save</code></td><td>Inserts a new document into a specified collection.</td></tr>
+    <tr><td><code>read</code></td><td>Retrieves documents from a collection, optionally filtered by fields.</td></tr>
+    <tr><td><code>delete</code></td><td>Deletes a document by ID or the first document matching a filter.</td></tr>
   </table>
 
-  <h2>Data Types</h2>
+  <h3>Data Types</h3>
+  <p>MyDB supports predefined data types to enforce document structure. You can also use custom data types (no validation enforced).</p>
   <table>
     <tr><th>Data Type</th><th>Required Fields</th><th>Example</th></tr>
     <tr>
       <td><code>pair</code></td>
-      <td>key, value</td>
+      <td><code>key</code>, <code>value</code></td>
       <td><pre><code>{
   "key": "username",
   "value": "suleiman"
@@ -61,29 +64,35 @@
     </tr>
     <tr>
       <td><code>four</code></td>
-      <td>a, b, c, d</td>
+      <td><code>a</code>, <code>b</code>, <code>c</code>, <code>d</code></td>
       <td><pre><code>{
-  "a": "foo",
-  "b": "bar",
-  "c": 123,
+  "a": "item",
+  "b": "description",
+  "c": 100,
   "d": true
 }</code></pre></td>
     </tr>
-    <tr>
-      <td><code>chat</code></td>
-      <td>user_id, message, response, timestamp</td>
-      <td><pre><code>{
-  "user_id": "12345",
-  "message": "Hello",
-  "response": "Hi there!",
-  "timestamp": "2025-09-10 12:30:00"
-}</code></pre></td>
-    </tr>
   </table>
+  <p><strong>Note</strong>: For custom data types, specify any <code>data_type</code> value (e.g., "chat") without validation. Example:
+  <pre><code>{
+  "data_type": "chat",
+  "payload": {
+    "user_id": "12345",
+    "message": "Hello",
+    "response": "Hi there!",
+    "timestamp": "2025-09-10T12:30:00Z"
+  }
+}</code></pre></p>
 
-  <h2>Examples</h2>
+  <h3>List Collections</h3>
+  <p>Use <code>GET /api/list_collections</code> to retrieve a list of all collection names you have access to.</p>
+  <pre><code>GET /api/list_collections?api_key=your_api_key_here</code></pre>
+  <p><strong>Response</strong>: Array of collection names, e.g., <code>["users", "chat_history", "orders"]</code>.</p>
 
-  <h3>Python</h3>
+  <h2>API Examples</h2>
+  <p>The following examples demonstrate how to use the <code>/api/operate</code> endpoint for database operations.</p>
+
+  <h3>Save a Document (Python)</h3>
   <pre><code class="language-python">
 import requests
 
@@ -91,27 +100,26 @@ BASE_URL = "http://localhost:5000"
 HEADERS = {"X-API-Key": "your_api_key_here"}
 
 payload = {
-  "collection": "users",  # you can name it anything: orders, chat_history...
+  "collection": "users",
   "action": "save",
   "data_type": "pair",
   "payload": {"key": "username", "value": "suleiman"}
 }
 
-res = requests.post(f"{BASE_URL}/api/operate", headers=HEADERS, json=payload)
-print(res.json())
+response = requests.post(f"{BASE_URL}/api/operate", headers=HEADERS, json=payload)
+print(response.json())  # {"inserted_id": 1}
   </code></pre>
 
-  <h3>JavaScript (fetch)</h3>
+  <h3>Read Documents (JavaScript)</h3>
   <pre><code class="language-js">
 const payload = {
-  collection: "chat_history",
-  action: "save",
-  data_type: "chat",
+  collection: "users",
+  action: "read",
+  data_type: "pair",
   payload: {
-    user_id: "12345",
-    message: "Hello bot",
-    response: "Hey there!",
-    timestamp: "2025-09-10 14:00:00"
+    filter: {"key": "username", "value": "suleiman"},
+    limit: 10,
+    skip: 0
   }
 };
 
@@ -124,20 +132,30 @@ fetch("http://localhost:5000/api/operate", {
   body: JSON.stringify(payload)
 })
 .then(res => res.json())
-.then(console.log);
+.then(data => console.log(data)); // [{_id: 1, key: "username", value: "suleiman", _owner_id: 1, _data_type: "pair"}, ...]
   </code></pre>
 
-  <h3>cURL</h3>
+  <h3>Delete a Document (cURL)</h3>
   <pre><code class="language-bash">
 curl -X POST http://localhost:5000/api/operate \
   -H "Content-Type: application/json" \
   -H "X-API-Key: your_api_key_here" \
   -d '{
     "collection": "orders",
-    "action": "save",
+    "action": "delete",
     "data_type": "four",
-    "payload": {"a": "item1", "b": "desc", "c": 100, "d": false}
+    "payload": {"id": 1}
   }'
+  </code></pre>
+  <p><strong>Response</strong>: <code>{"deleted": 1}</code> (number of documents deleted).</p>
+
+  <h3>Regenerate API Key (Python)</h3>
+  <p>Regenerate your API key if needed (requires login session).</p>
+  <pre><code class="language-python">
+import requests
+
+response = requests.post("http://localhost:5000/api/key/regenerate", headers={"Cookie": "session=your_session_cookie"})
+print(response.json())  # {"api_key": "new_api_key_here"}
   </code></pre>
 </main>
 
