@@ -6,6 +6,8 @@ from functools import wraps
 DB_PATH = os.environ.get("DB_PATH", "mydata.sqlite")
 SECRET_KEY = os.environ.get("SECRET_KEY", secrets.token_hex(16))
 API_KEY_HEADER = "X-API-Key"
+DEFAULT_ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "Alpha")
+DEFAULT_ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "Cortex($₦)")  # Change in production!
 
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
@@ -28,7 +30,22 @@ def init_db():
     if not os.path.exists(DB_PATH):
         db = sqlite3.connect(DB_PATH)
         db.executescript(open("schema.sql").read())
+        # Create default admin user
+        raw_api = secrets.token_urlsafe(32)
+        akh = hash_api_key(raw_api)
+        db.execute(
+            "INSERT INTO users (username, password_hash, api_key_hash, is_admin, created_at) VALUES (?, ?, ?, ?, ?)",
+            (
+                DEFAULT_ADMIN_USERNAME,
+                generate_password_hash(DEFAULT_ADMIN_PASSWORD),
+                akh,
+                1,
+                datetime.datetime.utcnow().isoformat()
+            )
+        )
+        db.commit()
         db.close()
+        print(f"Admin user created: username={DEFAULT_ADMIN_USERNAME}, password={DEFAULT_ADMIN_PASSWORD}, api_key={raw_api}")
 
 def login_required(f):
     @wraps(f)
@@ -71,6 +88,10 @@ def index():
         return redirect(url_for("dashboard"))
     return redirect(url_for("login"))
 
+@app.route("/docs")
+def docs():
+    return render_template("index.html")
+
 @app.route("/register", methods=["GET", "POST"])
 def register():
     db = get_db()
@@ -79,12 +100,16 @@ def register():
         p = request.form.get("password", "").strip()
         if not u or not p:
             return render_template("register.html", error="missing")
+        if u == DEFAULT_ADMIN_USERNAME:
+            return render_template("register.html", error="reserved")
         try:
             pwd = generate_password_hash(p)
             raw_api = secrets.token_urlsafe(32)
             akh = hash_api_key(raw_api)
-            db.execute("INSERT INTO users (username, password_hash, api_key_hash, is_admin) VALUES (?, ?, ?, ?)",
-                       (u, pwd, akh, 0))
+            db.execute(
+                "INSERT INTO users (username, password_hash, api_key_hash, is_admin, created_at) VALUES (?, ?, ?, ?, ?)",
+                (u, pwd, akh, 0, datetime.datetime.utcnow().isoformat())
+            )
             db.commit()
             return render_template("register.html", created=True, api_key=raw_api, username=u)
         except sqlite3.IntegrityError:
@@ -153,10 +178,14 @@ def admin_create_user():
     u = body.get("username")
     p = body.get("password")
     is_admin = 1 if body.get("is_admin") else 0
+    if u == DEFAULT_ADMIN_USERNAME:
+        return jsonify({"created": False, "error": "reserved username"}), 400
     raw = secrets.token_urlsafe(32)
     try:
-        db.execute("INSERT INTO users (username, password_hash, api_key_hash, is_admin) VALUES (?, ?, ?, ?)",
-                   (u, generate_password_hash(p), hash_api_key(raw), is_admin))
+        db.execute(
+            "INSERT INTO users (username, password_hash, api_key_hash, is_admin, created_at) VALUES (?, ?, ?, ?, ?)",
+            (u, generate_password_hash(p), hash_api_key(raw), is_admin, datetime.datetime.utcnow().isoformat())
+        )
         db.commit()
         return jsonify({"created": True, "api_key": raw})
     except sqlite3.IntegrityError:
@@ -205,8 +234,10 @@ def api_operate():
     now = datetime.datetime.utcnow().isoformat()
     if action == "save":
         doc_text = json.dumps(payload)
-        cur = db.execute("INSERT INTO documents (collection_name, doc_json, owner_id, data_type, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
-                         (collection, doc_text, user["id"], data_type, now, now))
+        cur = db.execute(
+            "INSERT INTO documents (collection_name, doc_json, owner_id, data_type, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (collection, doc_text, user["id"], data_type, now, now)
+        )
         db.commit()
         return jsonify({"inserted_id": cur.lastrowid})
     if action == "read":
@@ -268,4 +299,4 @@ def api_users():
 
 if __name__ == "__main__":
     init_db()
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5000) 
