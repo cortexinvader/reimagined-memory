@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Dashboard</title>
+  <style>body{font-family:system-ui,Segoe UI,Roboto,Arial;padding:24px}button{padding:6px 10px;border-radius:6px}</style>
+</head>
+<body>
+  <h2>Welcome {{ current_user.username }}</h2>
+  <div><a href="{{ url_for('logout') }}">Logout</a> {% if current_user.is_admin %}| <a href="{{ url_for('admin') }}">Admin</a>{% endif %}</div>
+
+  <h3>API Key</h3>
+  <div>
+    <button id="regen">Regenerate API Key</button>
+    <div id="key">Shown only on creation. Regenerate to get a new key.</div>
+  </div>
+
+  <h3>Your collections</h3>
+  <ul>
+    {% for c in collections %}
+      <li><a href="{{ url_for('collection', name=c) }}">{{ c }}</a></li>
+    {% else %}
+      <li>No collections yet</li>
+    {% endfor %}
+  </ul>
+
+  <h3>Create collection</h3>
+  <form id="createColl">
+    <input id="newColl" placeholder="collection name">
+    <button type="submit">Create</button>
+  </form>
+
+  <script>
+  document.getElementById("createColl").addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    const name = document.getElementById("newColl").value.trim();
+    if(!name) return alert("name required");
+    const res = await fetch("/api/operate", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({collection:name, action:"save", data_type:"_meta", payload:{_meta:true}})
+    });
+    if(res.ok) location.reload(); else alert("error");
+  });
+
+  document.getElementById("regen").addEventListener("click", async ()=>{
+    const res = await fetch("/api/key/regenerate", {method:"POST"});
+    if(!res.ok) return alert("error");
+    const j = await res.json();
+    document.getElementById("key").innerText = "New API Key: " + j.api_key + " (store it now)";
+  });
+  </script>
+</body>
+</html>
