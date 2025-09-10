@@ -1,0 +1,50 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Collection</title>
+  <style>body{font-family:system-ui,Segoe UI,Roboto,Arial;padding:24px}textarea{width:100%;max-width:900px}</style>
+</head>
+<body>
+  <h2>Collection: {{ collection }}</h2>
+  <div><a href="{{ url_for('dashboard') }}">Back</a></div>
+
+  <h3>Insert (save)</h3>
+  <div>
+    <label>Data type</label>
+    <select id="dtype"><option value="pair">pair</option><option value="four">four</option><option value="_meta">_meta</option></select>
+    <textarea id="payload" rows="6">{ "key": "username", "value": "Suleiman" }</textarea>
+    <button id="save">Save</button>
+  </div>
+
+  <h3>Read</h3>
+  <textarea id="rfilter" rows="4">{ "filter": { "key": "username" }, "limit": 50 }</textarea>
+  <button id="read">Read</button>
+
+  <h3>Delete</h3>
+  <textarea id="dpayload" rows="3">{ "filter": { "key": "username" } }</textarea>
+  <button id="del">Delete</button>
+
+  <h3>Results</h3>
+  <pre id="out"></pre>
+
+  <script>
+  async function operate(action, payload){
+    let p = payload;
+    try { p = JSON.parse(payload); } catch(e) { alert("invalid json"); return; }
+    const dtype = document.getElementById("dtype").value;
+    const res = await fetch("/api/operate", {
+      method:"POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({collection: "{{ collection }}", action, data_type: dtype, payload: p})
+    });
+    const j = await res.json();
+    document.getElementById("out").textContent = JSON.stringify(j, null, 2);
+  }
+
+  document.getElementById("save").addEventListener("click", ()=> operate("save", document.getElementById("payload").value));
+  document.getElementById("read").addEventListener("click", ()=> operate("read", document.getElementById("rfilter").value));
+  document.getElementById("del").addEventListener("click", ()=> operate("delete", document.getElementById("dpayload").value));
+  </script>
+</body>
+</html>
