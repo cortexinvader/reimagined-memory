@@ -12,6 +12,9 @@ DEFAULT_ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "securepassword123")  
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
 
+def hash_api_key(raw):
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
 def get_db():
     db = getattr(g, "_db", None)
     if db is None:
@@ -65,10 +68,6 @@ def init_db():
             raise
     db.close()
 
-# Ensure database is initialized when the app starts
-with app.app_context():
-    init_db()
-
 def login_required(f):
     @wraps(f)
     def w(*a, **kw):
@@ -86,9 +85,6 @@ def admin_required(f):
             abort(403)
         return f(*a, **kw)
     return w
-
-def hash_api_key(raw):
-    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 def verify_api_key(raw):
     h = hash_api_key(raw)
@@ -272,7 +268,7 @@ def api_operate():
             where.append("json_extract(doc_json, ?) = ?")
             params.append(f"$.{k}")
             params.append(v if isinstance(v, (int, float)) else json.dumps(v))
-        q = f"SELECT id, doc_json, owner_id, data_type, created_at, updated_at FROM documents WHERE {' AND '.join(where)} ORDER BY id DESC LIMIT ? OFFSET ?"
+        q = f"SELECT id, doc_json, owner_id, data_type, created_at, updated_at FROM documents WHERE {' AND '.join(where)} ORDER BY ID DESC LIMIT ? OFFSET ?"
         params.extend([limit, skip])
         rows = db.execute(q, params).fetchall()
         out = []
@@ -319,6 +315,9 @@ def api_users():
     rows = db.execute("SELECT id, username, is_admin, created_at FROM users").fetchall()
     return jsonify([dict(r) for r in rows])
 
-if __name__ == "__main__":
+# Ensure database is initialized when the app starts
+with app.app_context():
     init_db()
+
+if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
