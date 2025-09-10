@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MyDB - API Documentation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #f8fafc; color: #222; }
+    header { background: #1a73e8; padding: 20px; color: #fff; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { margin: 0; font-size: 24px; }
+    nav a { color: #fff; margin-left: 15px; text-decoration: none; font-weight: bold; }
+    nav a:hover { text-decoration: underline; }
+    main { padding: 20px; max-width: 1000px; margin: auto; }
+    h2 { color: #1a73e8; margin-top: 40px; }
+    h3 { margin-top: 25px; }
+    pre { background: #272822; color: #f8f8f2; padding: 15px; border-radius: 6px; overflow-x: auto; }
+    code { font-family: monospace; }
+    table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+    th { background: #f0f0f0; }
+    footer { margin-top: 40px; text-align: center; padding: 20px; background: #eee; font-size: 14px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>MyDB API Docs</h1>
+  <nav>
+    <a href="/login">Login</a>
+    <a href="/register">Register</a>
+  </nav>
+</header>
+
+<main>
+  <h2>Welcome to MyDB</h2>
+  <p><strong>MyDB</strong> is a lightweight Mongo-like database API built on SQLite.  
+  You can create <em>any number of collections</em> (users, chat_history, orders, logs, etc.) and store different <em>data types</em> using a simple JSON API.</p>
+
+  <h2>Authentication</h2>
+  <p>All requests must include your API key:</p>
+  <pre><code>X-API-Key: your_api_key_here</code></pre>
+
+  <h2>Actions</h2>
+  <table>
+    <tr><th>Action</th><th>Description</th></tr>
+    <tr><td><code>save</code></td><td>Insert a new document into a collection.</td></tr>
+    <tr><td><code>read</code></td><td>Fetch documents matching a filter.</td></tr>
+    <tr><td><code>delete</code></td><td>Remove documents matching a filter.</td></tr>
+  </table>
+
+  <h2>Data Types</h2>
+  <table>
+    <tr><th>Data Type</th><th>Required Fields</th><th>Example</th></tr>
+    <tr>
+      <td><code>pair</code></td>
+      <td>key, value</td>
+      <td><pre><code>{
+  "key": "username",
+  "value": "suleiman"
+}</code></pre></td>
+    </tr>
+    <tr>
+      <td><code>four</code></td>
+      <td>a, b, c, d</td>
+      <td><pre><code>{
+  "a": "foo",
+  "b": "bar",
+  "c": 123,
+  "d": true
+}</code></pre></td>
+    </tr>
+    <tr>
+      <td><code>chat</code></td>
+      <td>user_id, message, response, timestamp</td>
+      <td><pre><code>{
+  "user_id": "12345",
+  "message": "Hello",
+  "response": "Hi there!",
+  "timestamp": "2025-09-10 12:30:00"
+}</code></pre></td>
+    </tr>
+  </table>
+
+  <h2>Examples</h2>
+
+  <h3>Python</h3>
+  <pre><code class="language-python">
+import requests
+
+BASE_URL = "http://localhost:5000"
+HEADERS = {"X-API-Key": "your_api_key_here"}
+
+payload = {
+  "collection": "users",  # you can name it anything: orders, chat_history...
+  "action": "save",
+  "data_type": "pair",
+  "payload": {"key": "username", "value": "suleiman"}
+}
+
+res = requests.post(f"{BASE_URL}/api/operate", headers=HEADERS, json=payload)
+print(res.json())
+  </code></pre>
+
+  <h3>JavaScript (fetch)</h3>
+  <pre><code class="language-js">
+const payload = {
+  collection: "chat_history",
+  action: "save",
+  data_type: "chat",
+  payload: {
+    user_id: "12345",
+    message: "Hello bot",
+    response: "Hey there!",
+    timestamp: "2025-09-10 14:00:00"
+  }
+};
+
+fetch("http://localhost:5000/api/operate", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "X-API-Key": "your_api_key_here"
+  },
+  body: JSON.stringify(payload)
+})
+.then(res => res.json())
+.then(console.log);
+  </code></pre>
+
+  <h3>cURL</h3>
+  <pre><code class="language-bash">
+curl -X POST http://localhost:5000/api/operate \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your_api_key_here" \
+  -d '{
+    "collection": "orders",
+    "action": "save",
+    "data_type": "four",
+    "payload": {"a": "item1", "b": "desc", "c": 100, "d": false}
+  }'
+  </code></pre>
+</main>
+
+<footer>
+  &copy; 2025 MyDB. All rights reserved.
+</footer>
+
+</body>
+</html>
