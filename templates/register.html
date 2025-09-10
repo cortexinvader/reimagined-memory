@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Register</title>
+  <style>body{font-family:system-ui,Segoe UI,Roboto,Arial;padding:24px}</style>
+</head>
+<body>
+  <h2>Create account</h2>
+  {% if error %}<div style="color:#b00020">Error: {{ error }}</div>{% endif %}
+  {% if created %}
+    <div style="background:#e8f5e9;padding:12px;border-radius:6px">
+      <strong>Account created</strong>
+      <div>Username: {{ username }}</div>
+      <div>API Key (store now): <code>{{ api_key }}</code></div>
+    </div>
+    <p><a href="{{ url_for('login') }}">Login</a></p>
+  {% else %}
+    <form method="post">
+      <div><input name="username" placeholder="username" required></div>
+      <div><input name="password" placeholder="password" type="password" required></div>
+      <div><button type="submit">Register</button></div>
+    </form>
+  {% endif %}
+</body>
+</html>
