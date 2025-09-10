@@ -1,50 +1,55 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Collection</title>
-  <style>body{font-family:system-ui,Segoe UI,Roboto,Arial;padding:24px}textarea{width:100%;max-width:900px}</style>
+  <meta charset="UTF-8">
+  <title>MyDB - Collection View</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #f8fafc; color: #222; }
+    header { background: #1a73e8; padding: 20px; color: #fff; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { margin: 0; font-size: 22px; }
+    nav a { color: #fff; margin-left: 15px; text-decoration: none; font-weight: bold; }
+    nav a:hover { text-decoration: underline; }
+    main { padding: 20px; max-width: 1000px; margin: auto; }
+    h2 { color: #1a73e8; margin-top: 20px; }
+    .card { background: #fff; padding: 20px; margin-top: 20px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+    th { background: #f0f0f0; }
+    input, button { padding: 8px; margin: 5px 0; border-radius: 4px; border: 1px solid #ccc; }
+    button { background: #1a73e8; color: white; border: none; cursor: pointer; }
+    button:hover { background: #155fc0; }
+  </style>
 </head>
 <body>
-  <h2>Collection: {{ collection }}</h2>
-  <div><a href="{{ url_for('dashboard') }}">Back</a></div>
 
-  <h3>Insert (save)</h3>
-  <div>
-    <label>Data type</label>
-    <select id="dtype"><option value="pair">pair</option><option value="four">four</option><option value="_meta">_meta</option></select>
-    <textarea id="payload" rows="6">{ "key": "username", "value": "Suleiman" }</textarea>
-    <button id="save">Save</button>
+<header>
+  <h1>Collection: users</h1>
+  <nav>
+    <a href="admin.html">Admin</a>
+    <a href="index.html">Docs</a>
+  </nav>
+</header>
+
+<main>
+  <div class="card">
+    <h2>Documents</h2>
+    <table>
+      <tr><th>ID</th><th>Data</th><th>Actions</th></tr>
+      <tr><td>1</td><td>{"key": "username", "value": "suleiman"}</td><td><button>Delete</button></td></tr>
+      <tr><td>2</td><td>{"user_id": "12345", "message": "Hi", "response": "Hello", "timestamp": "2025-09-10"}</td><td><button>Delete</button></td></tr>
+    </table>
   </div>
 
-  <h3>Read</h3>
-  <textarea id="rfilter" rows="4">{ "filter": { "key": "username" }, "limit": 50 }</textarea>
-  <button id="read">Read</button>
+  <div class="card">
+    <h2>Query Collection</h2>
+    <form>
+      <label>Filter (JSON):</label><br>
+      <input type="text" name="filter" placeholder='{"key": "username"}' style="width:100%;"><br>
+      <button type="submit">Run Query</button>
+    </form>
+  </div>
+</main>
 
-  <h3>Delete</h3>
-  <textarea id="dpayload" rows="3">{ "filter": { "key": "username" } }</textarea>
-  <button id="del">Delete</button>
-
-  <h3>Results</h3>
-  <pre id="out"></pre>
-
-  <script>
-  async function operate(action, payload){
-    let p = payload;
-    try { p = JSON.parse(payload); } catch(e) { alert("invalid json"); return; }
-    const dtype = document.getElementById("dtype").value;
-    const res = await fetch("/api/operate", {
-      method:"POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({collection: "{{ collection }}", action, data_type: dtype, payload: p})
-    });
-    const j = await res.json();
-    document.getElementById("out").textContent = JSON.stringify(j, null, 2);
-  }
-
-  document.getElementById("save").addEventListener("click", ()=> operate("save", document.getElementById("payload").value));
-  document.getElementById("read").addEventListener("click", ()=> operate("read", document.getElementById("rfilter").value));
-  document.getElementById("del").addEventListener("click", ()=> operate("delete", document.getElementById("dpayload").value));
-  </script>
 </body>
 </html>
